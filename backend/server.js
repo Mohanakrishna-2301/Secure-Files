@@ -16,6 +16,9 @@ const { errorHandler, notFound } = require('./middleware/errorHandler');
 // Initialize Express
 const app = express();
 
+// Trust Proxy (Essential for Render/Vercel rate limiters)
+app.set('trust proxy', 1);
+
 // Connect to MongoDB
 connectDB();
 
@@ -25,7 +28,21 @@ app.use(helmet({
 }));
 
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:5173',
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps or curl)
+    if (!origin) return callback(null, true);
+    
+    const allowedOrigins = [
+      'http://localhost:5173',
+      process.env.CLIENT_URL,
+    ].filter(Boolean);
+
+    if (allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV === 'development') {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true, // Allow cookies
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
@@ -36,9 +53,8 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser());
 
-if (process.env.NODE_ENV === 'development') {
-  app.use(morgan('dev'));
-}
+// Always use morgan for request logging in production (to see Render logs)
+app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 
 // ── Health Check ────────────────────────────────────────────────
 app.get('/', (req, res) => {
@@ -65,7 +81,22 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`\n🚀 Secure-Files server running on http://localhost:${PORT}`);
   console.log(`🌍 Environment: ${process.env.NODE_ENV}`);
-  console.log(`🔗 Frontend URL: ${process.env.CLIENT_URL}\n`);
+  console.log(`🔗 Frontend URL: ${process.env.CLIENT_URL}`);
+
+  // Debug: Log all registered routes
+  console.log('--- Registered Routes ---');
+  app._router.stack.forEach((middleware) => {
+    if (middleware.route) { // main routes
+      console.log(`${Object.keys(middleware.route.methods).join(',').toUpperCase()} ${middleware.route.path}`);
+    } else if (middleware.name === 'router') { // router middleware
+      middleware.handle.stack.forEach((handler) => {
+        if (handler.route) {
+          console.log(`${Object.keys(handler.route.methods).join(',').toUpperCase()} ${middleware.regexp.toString().replace('/^\\', '').replace('\\/?(?=\\/|$)/i', '')}${handler.route.path}`);
+        }
+      });
+    }
+  });
+  console.log('-------------------------\n');
 });
 
 module.exports = app;
