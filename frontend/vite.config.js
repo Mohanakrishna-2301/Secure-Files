@@ -8,22 +8,7 @@ export default defineConfig({
     tailwindcss(),
     react(),
   ],
-  base: process.env.VITE_BASE_PATH || "/Secure-Files/",
-  resolve: {
-    alias: {
-      'react': path.resolve(__dirname, '../node_modules/react'),
-      'react-dom': path.resolve(__dirname, '../node_modules/react-dom'),
-    },
-  },
-  server: {
-    port: 5173,
-    proxy: {
-      '/api': {
-        target: 'http://localhost:5000',
-        changeOrigin: true,
-      },
-    },
-  },
+  base: process.env.VITE_BASE_PATH || (process.env.VERCEL ? "/" : "/Secure-Files/"),
 });
 
 // force restart
