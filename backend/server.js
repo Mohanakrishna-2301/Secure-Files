@@ -34,8 +34,8 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 
-// Handle preflight requests
-app.options('*', cors());
+// Handle preflight requests (Express 5 compatibility)
+app.options('(.*)', cors());
 
 // ── General Middleware ──────────────────────────────────────────
 app.use(express.json({ limit: '10mb' }));
