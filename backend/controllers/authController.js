@@ -51,17 +51,17 @@ const register = async (req, res) => {
     await existingUser.deleteOne();
   }
 
-  const user = await User.create({ name, email: email.toLowerCase(), password, verified: false });
-
-  // Generate and send OTP
+  // Generate OTP
   const otp = await generateOTP(email, 'register');
-  sendOTPEmail(email, otp, 'register').catch(err => console.error('Registration email failed:', err));
 
   res.status(201).json({
     success: true,
     message: 'Registration successful. Please check your email for the OTP.',
     email: user.email,
   });
+
+  // Background task: Send OTP
+  sendOTPEmail(email, otp, 'register').catch(err => console.error('Registration email failed:', err));
 };
 
 // @desc   Verify OTP
@@ -173,22 +173,16 @@ const login = async (req, res) => {
   user.lastLoginRisk = riskLevel;
   await user.save();
 
-  // Send security email for medium/high risk
-  if (riskLevel !== 'low') {
-    sendRiskAlertEmail(user.email, user.name, { riskLevel, ip, device, browser }).catch(console.error);
-  }
-
   // Create token pair + session
   const { accessToken, refreshToken } = await createTokenPair(
     user._id, user.role, device, ip, ua, browser, os
   );
 
-  // Send refresh token as httpOnly session cookie (no maxAge = dies when browser closes)
+  // Send refresh token as httpOnly session cookie
   res.cookie('refreshToken', refreshToken, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'strict',
-    // NO maxAge/expires → session-only cookie
   });
 
   res.json({
@@ -207,6 +201,11 @@ const login = async (req, res) => {
       twoFactorEnabled: user.twoFactorEnabled,
     },
   });
+
+  // Background task: Send security email for medium/high risk
+  if (riskLevel !== 'low') {
+    sendRiskAlertEmail(user.email, user.name, { riskLevel, ip, device, browser }).catch(console.error);
+  }
 };
 
 // @desc   Google OAuth callback — issue tokens
@@ -247,10 +246,6 @@ const googleLogin = async (req, res) => {
   user.lastLoginRisk = riskLevel;
   await user.save();
 
-  if (riskLevel !== 'low') {
-    sendRiskAlertEmail(user.email, user.name, { riskLevel, ip, device, browser }).catch(console.error);
-  }
-
   const { accessToken, refreshToken } = await createTokenPair(
     user._id, user.role, device, ip, ua, browser, os
   );
@@ -259,7 +254,6 @@ const googleLogin = async (req, res) => {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'strict',
-    // NO maxAge/expires → session-only cookie
   });
 
   res.json({
@@ -277,6 +271,11 @@ const googleLogin = async (req, res) => {
       storageUsed: user.storageUsed,
     },
   });
+
+  // Background task: Send security email for medium/high risk
+  if (riskLevel !== 'low') {
+    sendRiskAlertEmail(user.email, user.name, { riskLevel, ip, device, browser }).catch(console.error);
+  }
 };
 
 // @desc   Refresh access token
@@ -333,9 +332,13 @@ const resendOTP = async (req, res) => {
   const { email, purpose = 'register' } = req.body;
   if (!email) return res.status(400).json({ success: false, message: 'Email is required.' });
 
+  // Generate OTP
   const otp = await generateOTP(email, purpose);
-  sendOTPEmail(email, otp, purpose).catch(err => console.error('Resend OTP email failed:', err));
+
   res.json({ success: true, message: 'OTP sent successfully.' });
+
+  // Background task: Send OTP
+  sendOTPEmail(email, otp, purpose).catch(err => console.error('Resend OTP email failed:', err));
 };
 
 module.exports = { register, verifyOTPHandler, login, googleLogin, refreshToken, logout, logoutAll, resendOTP };
