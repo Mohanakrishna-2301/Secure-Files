@@ -55,7 +55,7 @@ const register = async (req, res) => {
 
   // Generate and send OTP
   const otp = await generateOTP(email, 'register');
-  await sendOTPEmail(email, otp, 'register');
+  sendOTPEmail(email, otp, 'register').catch(err => console.error('Registration email failed:', err));
 
   res.status(201).json({
     success: true,
@@ -334,7 +334,7 @@ const resendOTP = async (req, res) => {
   if (!email) return res.status(400).json({ success: false, message: 'Email is required.' });
 
   const otp = await generateOTP(email, purpose);
-  await sendOTPEmail(email, otp, purpose);
+  sendOTPEmail(email, otp, purpose).catch(err => console.error('Resend OTP email failed:', err));
   res.json({ success: true, message: 'OTP sent successfully.' });
 };
 
