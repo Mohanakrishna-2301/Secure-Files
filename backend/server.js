@@ -50,11 +50,11 @@ app.get('/api/health', (req, res) => {
 });
 
 // ── API Routes ──────────────────────────────────────────────────
-app.use('/auth', authRoutes);
-app.use('/user', userRoutes);
-app.use('/files', fileRoutes);
-app.use('/admin', adminRoutes);
-app.use('/plans', planRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/api/user', userRoutes);
+app.use('/api/files', fileRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/plans', planRoutes);
 
 // ── Error Handling ──────────────────────────────────────────────
 app.use(notFound);

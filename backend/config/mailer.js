@@ -2,13 +2,15 @@ const nodemailer = require('nodemailer');
 
 const transporter = nodemailer.createTransport({
   host: process.env.MAIL_HOST,
-  port: parseInt(process.env.MAIL_PORT),
-  secure: false, // TLS via STARTTLS
+  port: 465, // Using port 465 for SSL (more stable in cloud environments)
+  secure: true, 
   auth: {
     user: process.env.MAIL_USER,
     pass: process.env.MAIL_PASS,
   },
-  family: 4, // Force IPv4 to avoid ENETUNREACH errors on IPv6
+  family: 4, 
+  connectionTimeout: 30000, // 30 seconds
+  greetingTimeout: 30000, 
 });
 
 // Verify connection on startup
