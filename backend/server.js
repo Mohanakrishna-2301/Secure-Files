@@ -41,16 +41,20 @@ if (process.env.NODE_ENV === 'development') {
 }
 
 // ── Health Check ────────────────────────────────────────────────
+app.get('/', (req, res) => {
+  res.json({ success: true, message: 'Secure-Files Backend is running 🚀' });
+});
+
 app.get('/api/health', (req, res) => {
   res.json({ success: true, message: 'Secure-Files API is running 🚀', env: process.env.NODE_ENV });
 });
 
 // ── API Routes ──────────────────────────────────────────────────
-app.use('/api/auth', authRoutes);
-app.use('/api/user', userRoutes);
-app.use('/api/files', fileRoutes);
-app.use('/api/admin', adminRoutes);
-app.use('/api/plans', planRoutes);
+app.use('/auth', authRoutes);
+app.use('/user', userRoutes);
+app.use('/files', fileRoutes);
+app.use('/admin', adminRoutes);
+app.use('/plans', planRoutes);
 
 // ── Error Handling ──────────────────────────────────────────────
 app.use(notFound);
