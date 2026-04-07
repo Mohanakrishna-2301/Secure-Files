@@ -22,20 +22,19 @@ app.set('trust proxy', 1);
 // Connect to MongoDB
 connectDB();
 
-// ── Security Middleware ─────────────────────────────────────────
-app.use(helmet({
-  crossOriginResourcePolicy: { policy: 'cross-origin' },
-}));
-
+// ── CORS Middleware (Must be before other middleware) ───────────
 app.use(cors({
   origin: 'https://secure-files-ten.vercel.app',
   credentials: true, // Allow cookies
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
+  optionsSuccessStatus: 200, // Some legacy browsers (IE11, various SmartTVs) choke on 204
 }));
 
-// Handle preflight requests (Express 5 compatibility)
-app.options('(.*)', cors());
+// ── Security Middleware ─────────────────────────────────────────
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: 'cross-origin' },
+}));
 
 // ── General Middleware ──────────────────────────────────────────
 app.use(express.json({ limit: '10mb' }));
