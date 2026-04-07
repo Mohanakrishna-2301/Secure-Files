@@ -8,6 +8,7 @@ export default defineConfig({
     tailwindcss(),
     react(),
   ],
+  base: process.env.VITE_BASE_PATH || "/Secure-Files/",
   resolve: {
     alias: {
       'react': path.resolve(__dirname, '../node_modules/react'),
