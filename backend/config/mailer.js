@@ -8,6 +8,7 @@ const transporter = nodemailer.createTransport({
     user: process.env.MAIL_USER,
     pass: process.env.MAIL_PASS,
   },
+  family: 4, // Force IPv4 to avoid ENETUNREACH errors on IPv6
 });
 
 // Verify connection on startup
